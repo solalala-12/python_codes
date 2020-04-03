@@ -5,7 +5,7 @@ import subprocess
 from utils import makedirs, remove_file
 
 '''
-* youtube에서 data lownload 받는 소스
+* youtube에서 data lownload 
 
 metadata.csv
 title|url|start_point|end_point
