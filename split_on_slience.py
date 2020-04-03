@@ -1,21 +1,16 @@
-# Code based on https://github.com/carpedm20/multi-speaker-tacotron-tensorflow
-
-
 import os
 import argparse
 from glob import glob
 from pydub import silence
 from pydub import AudioSegment
 
-
 '''
 * audio 파일을 받아 묵음을 기준으로 audio를 분할하는 소스 / wav - > 1.0001.wav , 1.0002,wav
 1. import 정리
 2. pydub으로 방법 통일
-3. 코드 간소화
+3. 코드 클린
 
 '''
-
 def read_audio(audio_path):
     return AudioSegment.from_file(audio_path)
 
@@ -24,7 +19,7 @@ def split_on_silence_with_pydub(
     # 파일 형식 지정 
         audio_path, skip_idx=0, out_ext="wav",
         silence_thresh=-40, min_silence_len=400,
-        silence_chunk_len=100, keep_silence=100):
+        silence_chunk_len=100, keep_silence=700):
         
     filename = os.path.basename(audio_path).split('.', 1)[0]
     # print('filename : ',filename)
@@ -65,11 +60,16 @@ def split_on_silence_with_pydub(
         # 파일의 끝 여유 공간
         end_idx += keep_silence
 
-        # print(start_idx ,end_idx)
 
-        # datasets/kg/0001.0001.wav
+        # 한 파일에서의 분할이 필요할 때 (filename 같게 )
+        target_audio_path = audio_path
+
+        # 한 파일에서 여러 문장으로의 분할이 필요할 때
+        '''
         target_audio_path = "{}/{}.{:04d}.{}".format(
                 os.path.dirname(audio_path), filename, idx, out_ext)
+
+        '''
 
         # audio 파일 저장
         audio[start_idx:end_idx].export(target_audio_path, out_ext)
