@@ -3,14 +3,16 @@ import argparse
 from glob import glob
 from pydub import silence
 from pydub import AudioSegment
+from tqdm import tqdm
 
 '''
 * audio 파일을 받아 묵음을 기준으로 audio를 분할하는 소스 / wav - > 1.0001.wav , 1.0002,wav
 1. import 정리
 2. pydub으로 방법 통일
 3. 코드 클린
-
 '''
+
+
 def read_audio(audio_path):
     return AudioSegment.from_file(audio_path)
 
@@ -61,7 +63,7 @@ def split_on_silence_with_pydub(
         end_idx += keep_silence
 
 
-        # 한 파일에서의 분할이 필요할 때 (filename 같게 )
+        # 한 파일에서의 분할이 필요할 때 (filename 같게 / overwrite)
         target_audio_path = audio_path
 
         # 한 파일에서 여러 문장으로의 분할이 필요할 때
@@ -83,8 +85,8 @@ def split_on_silence_batch(audio_paths, **kargv):
     print(audio_paths)
     results=[]
 
-    for i in audio_paths:
-        print(i,'의 분할을 시작합니다.')
+    for i in tqdm(audio_paths,desc=" Split_on_silence"):
+        # print(i,'의 분할을 시작합니다.')
         out = split_on_silence_with_pydub(i)
         results.append(out)
 
