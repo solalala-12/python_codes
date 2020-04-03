@@ -1,16 +1,18 @@
 # Code based on https://github.com/carpedm20/multi-speaker-tacotron-tensorflow
 
+
+import os
 import argparse
 from glob import glob
 from pydub import silence
 from pydub import AudioSegment
-from functools import partial
-from utils import parallel_run
+
 
 '''
 * audio 파일을 받아 묵음을 기준으로 audio를 분할하는 소스 / wav - > 1.0001.wav , 1.0002,wav
 1. import 정리
 2. pydub으로 방법 통일
+3. 코드 간소화
 
 '''
 
@@ -28,12 +30,16 @@ def split_on_silence_with_pydub(
     # print('filename : ',filename)
 
     audio = read_audio(audio_path)
+    
     not_silence_ranges = silence.detect_nonsilent(
         audio, min_silence_len=silence_chunk_len,
         silence_thresh=silence_thresh)
 
+
     #  파일 별 non_silence 구간 저장
-    print('not_silence_ranges : ',len(not_silence_ranges))
+    #  print('not_silence_ranges' ,not_silence_ranges)
+    
+ 
 
     # 처음 구간
     edges = [not_silence_ranges[0]]
@@ -55,8 +61,11 @@ def split_on_silence_with_pydub(
     for idx, (start_idx, end_idx) in enumerate(edges[skip_idx:]): # skip_idx= 0 (default)
         # 시작 지점이 100ms 보다 이전이면 0을 return
         start_idx = max(0, start_idx - keep_silence)
-        # 여유 공간
+        
+        # 파일의 끝 여유 공간
         end_idx += keep_silence
+
+        # print(start_idx ,end_idx)
 
         # datasets/kg/0001.0001.wav
         target_audio_path = "{}/{}.{:04d}.{}".format(
@@ -71,13 +80,16 @@ def split_on_silence_with_pydub(
 
 def split_on_silence_batch(audio_paths, **kargv):
     audio_paths.sort()
+    print(audio_paths)
+    results=[]
 
-    # batch에서 하나씩 실행한다.
-    fn = partial(split_on_silence_with_pydub, **kargv)
+    for i in audio_paths:
+        print(i,'의 분할을 시작합니다.')
+        out = split_on_silence_with_pydub(i)
+        results.append(out)
 
-    parallel_run(fn, audio_paths,
-            desc="Split on silence", parallel=False)
-
+        
+    
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--audio_pattern', required=True)
