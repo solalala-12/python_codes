@@ -2,15 +2,11 @@ import os
 import youtube_dl
 import csv
 import subprocess
-from utils import makedirs, remove_file
 
 '''
 * youtube에서 data lownload 
-
 metadata.csv
 title|url|start_point|end_point
-
-
 '''
 
 
@@ -26,8 +22,7 @@ def get_mili_sec(text):
 
 class Data(object):
     def __init__(
-            self, text_path, video_url, title, start_time, end_time):
-        self.text_path = text_path
+            self, title, video_url, start_time, end_time):
         self.video_url = video_url
         self.title = title
         self.start =start_time
@@ -39,18 +34,16 @@ def read_csv(path):
         data = []
         for line in f:
             title_num+=1
-            text_path, video_url,  _,start_time, end_time = line.split('|')
+            title, video_url, start_time, end_time = line.split('|')
 
-            data.append(Data(text_path, video_url, str(title_num), start_time, end_time))
+            data.append(Data(title, video_url, start_time, end_time))
         return data
 
 
 def download_audio_with_urls(data, out_ext="wav"):
     for d in data:
-        original_path = os.path.join(base_dir, 'audio',
-                os.path.basename(d.text_path)).replace('.txt', '.original.mp3')
-        out_path = os.path.join(base_dir, 'audio',
-                os.path.basename(d.text_path)).replace('.txt', '.wav')
+        original_path='./audio/'+d.title+'.original.mp3'
+        out_path='./audio/'+d.title+'.wav'
 
 
         options = {
@@ -64,38 +57,30 @@ def download_audio_with_urls(data, out_ext="wav"):
         }
 
         try:
-
             with youtube_dl.YoutubeDL(options) as ydl:
-                if(not os.path.exists(original_path)):
-                    ydl.download([d.video_url])
-                    print('Complete download!')
+                ydl.download([d.video_url])
+                print('Complete download!')
 
         except Exception as e:
             print('error',e)
-        print('original_path ={} , out_path ={} , out_ext ={} '.format(original_path,out_path,out_ext))
 
 
         # mp3 file에서 원하는 만큼 자르고 wav파일로 저장
         #  ffmpeg -i test.mp3 -ss 00:00:00 -to 00:00:30  temp.wav
 
-        texts='ffmpeg -i {} -ss {} -to {}  {}'.format('./datasets/park/audio/'+original_path.split('/')[-1],
-        "%02d:%02d:%02d" % (0, int(d.start.split(':')[0]), int(d.start.split(':')[1])),"%02d:%02d:%02d" % (0, int(d.end.split(':')[0]), int(d.end.split(':')[1])),'./datasets/park/audio/'+out_path.split('/')[-1])
+        print(original_path,out_path)
+
+        texts='ffmpeg -i {} -ss {} -to {}  {}'.format(original_path,
+        "%02d:%02d:%02d" % (0, int(d.start.split(':')[0]), int(d.start.split(':')[1])),"%02d:%02d:%02d" % (0, int(d.end.split(':')[0]), int(d.end.split(':')[1])),out_path)
         # print(texts)
         subprocess.call(texts,shell=True)
-        remove_file(original_path)
+        os.remove(original_path)
         
         
 if __name__ == '__main__':
+    if not os.path.exists(os.path.join(base_dir, "audio")):
+        os.makedirs(os.path.join(base_dir, "audio"))
 
-    makedirs(os.path.join(base_dir, "audio"))
-
-    data = read_csv(os.path.join(base_dir, "metadata.csv"))
+    data = read_csv(os.path.join(base_dir, "metadata.txt"))
     download_audio_with_urls(data)
-
-
-
-
-
-    
-
 
