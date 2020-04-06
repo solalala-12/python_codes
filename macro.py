@@ -1,3 +1,11 @@
+# code based with https://k4keye.tistory.com/111
+
+'''
+0. 이전 동작 되돌리기 , 저장하기, 불러오기 추가
+1. 코드 클리닝
+
+'''
+
 import pyautogui as m 
 import time 
 import sys 
@@ -60,7 +68,7 @@ def main():
 
     while True: 
         print(' ** 현재까지 {} 개의 동작 '.format(len(Choice_arr)))
-        Choice = input("1.마우스 이동/클릭 2.시작 3.이전동작 되돌리기 4. 저장하기 5. 불러오기 6. 종료 : ") 
+        Choice = input("1.마우스 이동/클릭 2.시작 3.이전 동작 되돌리기 4. 저장하기 5. 불러오기 6. 종료 : ") 
         print(Choice) 
    
 
