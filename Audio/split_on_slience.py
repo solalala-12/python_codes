@@ -13,33 +13,54 @@ from tqdm import tqdm
 '''
 
 
+
 def read_audio(audio_path):
     return AudioSegment.from_file(audio_path)
 
 def split_on_silence_with_pydub(
 
     # 파일 형식 지정 
-        audio_path, skip_idx=0, out_ext="wav",
+        audio_path, skip_idx=0, out_ext="wav",    
         silence_thresh=-40, min_silence_len=400,
-        silence_chunk_len=100, keep_silence=700):
-        
-    filename = os.path.basename(audio_path).split('.', 1)[0]
-    # print('filename : ',filename)
+        silence_chunk_len=100, keep_silence=200):
 
+    '''
+    min_slience_len = 커질 수록 파일 길이가 길어짐 / 파일 최소 길이
+    silence_thresh = 파일 무음 판별 기준
+    silence_chunk_len = 
+    keep_silence = 파일 앞, 뒤 여유 공간 / 주의: 앞뒤 문맥을 가져올 수 있음.
+
+    '''
+
+    # 한 파일에서 마지막 부분의 끝나는 지점만 catch 후 삭제
+    filename=os.path.basename(audio_path)
+    filename=filename[:filename.index(")")+1]
     audio = read_audio(audio_path)
-    
+
     not_silence_ranges = silence.detect_nonsilent(
         audio, min_silence_len=silence_chunk_len,
         silence_thresh=silence_thresh)
 
-
-    #  파일 별 non_silence 구간 저장
-    #  print('not_silence_ranges' ,not_silence_ranges)
     
- 
+    target_audio_path = './datasets/son_own_slience/audio/'+filename+'.wav'
 
-    # 처음 구간
-    edges = [not_silence_ranges[0]]
+    if not os.path.exists(target_audio_path):
+        try:
+            starts_idx=0
+            end_idx=not_silence_ranges[-1][1]
+            end_idx += keep_silence
+
+            # print('[starts_idx,end_idx]', [starts_idx,end_idx])
+            
+            audio[starts_idx:end_idx].export(target_audio_path, out_ext)
+
+        except IndexError:
+            print('index error---',target_audio_path)
+
+    return None
+
+
+    ''' 한 파일에서 여러 구간을  자를 때 
 
     for idx in range(1, len(not_silence_ranges)-1):
         cur_start = not_silence_ranges[idx][0]
@@ -53,9 +74,21 @@ def split_on_silence_with_pydub(
         else:
             edges.append(not_silence_ranges[idx])
 
+    
+
+
+    for idx in range(1, len(not_silence_ranges)-1):
+
+        edges[-1][1] = not_silence_ranges[idx][1]
+        print('edges : ',not_silence_ranges[idx])
+        edges.append(not_silence_ranges[idx])
+
+    
+
+
     audio_paths = []
     
-    for idx, (start_idx, end_idx) in enumerate(edges[skip_idx:]): # skip_idx= 0 (default)
+    for idx, (start_idx, end_idx) in enumerate(edges): # skip_idx= 0 (default)
         # 시작 지점이 100ms 보다 이전이면 0을 return
         start_idx = max(0, start_idx - keep_silence)
         
@@ -63,15 +96,17 @@ def split_on_silence_with_pydub(
         end_idx += keep_silence
 
 
-        # 한 파일에서의 분할이 필요할 때 (filename 같게 / overwrite)
-        target_audio_path = audio_path
+        # 한 파일에서의 분할이 필요할 때 (filename 같게 )
+        # target_audio_path=audio_path
+        target_audio_path = './datasets/son_own_slience/audio/'+filename+'.wav'
+        print('target_audio_path :',target_audio_path)
 
         # 한 파일에서 여러 문장으로의 분할이 필요할 때
-        '''
+        
         target_audio_path = "{}/{}.{:04d}.{}".format(
                 os.path.dirname(audio_path), filename, idx, out_ext)
 
-        '''
+        
 
         # audio 파일 저장
         audio[start_idx:end_idx].export(target_audio_path, out_ext)
@@ -80,9 +115,11 @@ def split_on_silence_with_pydub(
 
     return audio_paths
 
+    '''
+
 def split_on_silence_batch(audio_paths, **kargv):
     audio_paths.sort()
-    print(audio_paths)
+    # print('audio_paths :',audio_paths)
     results=[]
 
     for i in tqdm(audio_paths,desc=" Split_on_silence"):
@@ -90,7 +127,6 @@ def split_on_silence_batch(audio_paths, **kargv):
         out = split_on_silence_with_pydub(i)
         results.append(out)
 
-        
     
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -99,7 +135,7 @@ if __name__ == "__main__":
     config = parser.parse_args()
 
     audio_paths = glob(config.audio_pattern)
-    # print(audio_paths)
+    # print('audio_paths :',audio_paths)
 
     split_on_silence_batch(
             audio_paths, out_ext=config.out_ext
